@@ -308,49 +308,51 @@ export function BetDetail({
   return (
     <div className="space-y-5">
       {/* Header */}
-      <div>
-        <div className="flex items-center gap-2 flex-wrap">
-          <Badge className={statusConfig[bet.status].className} variant="outline">
-            {statusConfig[bet.status].label}
-          </Badge>
-          {isCreator && (
-            <Badge variant="secondary" className="text-xs">
-              Your bet
+      <Card className="border-0 bg-white/70 backdrop-blur-sm shadow-sm">
+        <CardContent className="p-5">
+          <div className="flex items-center gap-2 flex-wrap">
+            <Badge className={statusConfig[bet.status].className} variant="outline">
+              {statusConfig[bet.status].label}
             </Badge>
-          )}
-        </div>
-
-        <h1 className="mt-3 text-2xl font-bold tracking-tight leading-tight">
-          {bet.question}
-        </h1>
-
-        {bet.stakes && (
-          <p className="mt-2 text-sm font-semibold text-coral">
-            &#x1F525; {bet.stakes}
-          </p>
-        )}
-
-        <div className="mt-3 flex flex-wrap items-center gap-2">
-          <div className="flex items-center gap-1.5 rounded-full bg-muted px-3 py-1 text-xs text-muted-foreground">
-            <Clock className="h-3 w-3" />
-            {isOpen ? (
-              <Countdown deadline={bet.deadline} onExpire={() => router.refresh()} />
-            ) : deadlinePassed ? (
-              "Betting closed"
-            ) : (
-              new Date(bet.deadline).toLocaleDateString()
+            {isCreator && (
+              <Badge variant="outline" className="text-xs bg-violet/10 text-violet border-violet/20">
+                Your bet
+              </Badge>
             )}
           </div>
-          <div className="flex items-center gap-1.5 rounded-full bg-muted px-3 py-1 text-xs text-muted-foreground">
-            <Users className="h-3 w-3" />
-            {wagers.length} {wagers.length === 1 ? "vote" : "votes"}
-          </div>
-        </div>
 
-        <p className="mt-2 text-xs text-muted-foreground">
-          Created by {isCreator ? "you" : creatorName}
-        </p>
-      </div>
+          <h1 className="mt-3 text-2xl font-bold tracking-tight leading-tight">
+            {bet.question}
+          </h1>
+
+          {bet.stakes && (
+            <p className="mt-2 text-sm font-semibold text-coral">
+              &#x1F525; {bet.stakes}
+            </p>
+          )}
+
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-1.5 rounded-full bg-violet-light/60 px-3 py-1 text-xs text-violet font-medium">
+              <Clock className="h-3 w-3" />
+              {isOpen ? (
+                <Countdown deadline={bet.deadline} onExpire={() => router.refresh()} />
+              ) : deadlinePassed ? (
+                "Betting closed"
+              ) : (
+                new Date(bet.deadline).toLocaleDateString()
+              )}
+            </div>
+            <div className="flex items-center gap-1.5 rounded-full bg-violet-light/60 px-3 py-1 text-xs text-violet font-medium">
+              <Users className="h-3 w-3" />
+              {wagers.length} {wagers.length === 1 ? "vote" : "votes"}
+            </div>
+          </div>
+
+          <p className="mt-2 text-xs text-muted-foreground">
+            Created by {isCreator ? "you" : creatorName}
+          </p>
+        </CardContent>
+      </Card>
 
       {/* Winner banner */}
       {didWin && (
@@ -475,7 +477,7 @@ export function BetDetail({
 
       {/* Locked state — predictions revealed */}
       {isLocked && !needsResolution && (
-        <Card className="border-0 bg-gold-light/50">
+        <Card className="border-0 bg-white/60 backdrop-blur-sm">
           <CardContent className="py-6 text-center">
             <div className="mb-2 text-3xl">&#x1F510;</div>
             <p className="text-lg font-bold">Predictions are sealed!</p>
@@ -488,7 +490,7 @@ export function BetDetail({
 
       {/* Prediction list (locked & resolved) */}
       {(isLocked || isResolved) && wagers.length > 0 && (
-        <Card>
+        <Card className="border-0 bg-white/70 backdrop-blur-sm shadow-sm">
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-base">
               <Users className="h-4 w-4 text-violet" />
@@ -543,7 +545,7 @@ export function BetDetail({
 
       {/* Resolution UI — creator only */}
       {needsResolution && (
-        <Card className="overflow-hidden border-0 shadow-lg">
+        <Card className="overflow-hidden border-0 bg-white/80 backdrop-blur-sm shadow-lg">
           <div className="h-1 bg-gradient-to-r from-coral to-gold" />
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-base text-coral">
@@ -610,7 +612,7 @@ export function BetDetail({
       )}
 
       {/* Share button */}
-      <Button variant="outline" className="w-full" onClick={handleShare}>
+      <Button variant="outline" className="w-full bg-white/70 backdrop-blur-sm border-violet/20 hover:bg-white/90" onClick={handleShare}>
         {shareCopied ? (
           <>
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
@@ -625,8 +627,8 @@ export function BetDetail({
       </Button>
 
       {/* Join code footer */}
-      <div className="rounded-xl bg-violet-light/50 px-4 py-3 text-center">
-        <p className="text-xs text-muted-foreground">Join code</p>
+      <div className="rounded-xl bg-white/60 backdrop-blur-sm border border-violet/10 px-4 py-3 text-center">
+        <p className="text-xs text-violet/60">Join code</p>
         <p className="font-mono text-lg font-black tracking-[0.2em] text-violet">
           {bet.join_code}
         </p>

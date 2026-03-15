@@ -85,15 +85,19 @@ export default async function BetDetailPage({
     );
 
   return (
-    <BetDetail
-      bet={bet}
-      options={options}
-      wagers={wagers}
-      payouts={payouts}
-      participantCount={participantCount || 0}
-      currentUserId={user.id}
-      currentUserBalance={profile?.coin_balance || 0}
-      creatorName={creator?.display_name || "Unknown"}
-    />
+    <div className="-mx-5 -my-6 min-h-screen bg-gradient-to-b from-violet-light via-violet-light/30 to-background">
+      <div className="px-5 py-6">
+        <BetDetail
+          bet={bet}
+          options={options}
+          wagers={wagers}
+          payouts={payouts}
+          participantCount={participantCount || 0}
+          currentUserId={user.id}
+          currentUserBalance={profile?.coin_balance || 0}
+          creatorName={creator?.display_name || "Unknown"}
+        />
+      </div>
+    </div>
   );
 }
