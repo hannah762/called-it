@@ -32,15 +32,30 @@ export default async function HomePage() {
       .select("display_name, coin_balance")
       .eq("id", user.id)
       .single();
-    profile = userProfile;
+    profile = userProfile as any;
 
-    // Get bet IDs the user is part of
+    // Get bet IDs the user is part of (via participants table)
     const { data: participations } = await supabase
       .from("bet_participants")
       .select("bet_id")
       .eq("user_id", user.id);
 
-    const betIds = participations?.map((p) => p.bet_id) || [];
+    const participantBetIds = ((participations || []) as any[]).map(
+      (p: any) => p.bet_id
+    );
+
+    // Also get bets the user created (in case participant insert failed)
+    const { data: createdBets } = await supabase
+      .from("bets")
+      .select("id")
+      .eq("creator_id", user.id);
+
+    const createdBetIds = ((createdBets || []) as any[]).map(
+      (b: any) => b.id
+    );
+
+    // Combine and deduplicate
+    const betIds = [...new Set([...participantBetIds, ...createdBetIds])];
 
     if (betIds.length > 0) {
       const { data: active } = await supabase
@@ -50,7 +65,7 @@ export default async function HomePage() {
         .in("status", ["open", "locked"])
         .order("deadline", { ascending: true });
 
-      activeBets = active || [];
+      activeBets = (active || []) as any[];
 
       const sevenDaysAgo = new Date(
         Date.now() - 7 * 24 * 60 * 60 * 1000
@@ -64,9 +79,10 @@ export default async function HomePage() {
         .gte("resolved_at", sevenDaysAgo)
         .order("resolved_at", { ascending: false });
 
-      resolvedBets = resolved || [];
+      resolvedBets = (resolved || []) as any[];
     }
 
+    // Bets the user created that need resolution
     const { data: unresolved } = await supabase
       .from("bets")
       .select("*")
@@ -74,7 +90,7 @@ export default async function HomePage() {
       .eq("status", "locked")
       .lt("deadline", new Date().toISOString());
 
-    needsResolution = unresolved || [];
+    needsResolution = (unresolved || []) as any[];
   }
 
   function timeUntil(deadline: string): string {
@@ -140,7 +156,7 @@ export default async function HomePage() {
               </span>
             </h2>
           </div>
-          {needsResolution.map((bet) => (
+          {needsResolution.map((bet: any) => (
             <Link key={bet.id} href={`/bet/${bet.id}`}>
               <Card className="border-l-4 border-l-coral bg-coral-light/30 transition-all hover:shadow-md active:scale-[0.99]">
                 <CardContent className="flex items-center justify-between p-4">
@@ -168,7 +184,7 @@ export default async function HomePage() {
         </div>
         {activeBets.length > 0 ? (
           <div className="space-y-2.5">
-            {activeBets.map((bet, i) => {
+            {activeBets.map((bet: any, i: number) => {
               const accent = cardAccents[i % cardAccents.length];
               return (
                 <Link key={bet.id} href={`/bet/${bet.id}`}>
@@ -238,7 +254,7 @@ export default async function HomePage() {
         </div>
         {resolvedBets.length > 0 ? (
           <div className="space-y-2.5">
-            {resolvedBets.map((bet, i) => {
+            {resolvedBets.map((bet: any, i: number) => {
               const accent = cardAccents[(i + 2) % cardAccents.length];
               return (
                 <Link key={bet.id} href={`/bet/${bet.id}`}>
