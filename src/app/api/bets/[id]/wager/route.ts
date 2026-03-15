@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { placeWagerSchema } from "@/lib/validators/bet";
-import { MIN_WAGER, MAX_WAGER } from "@/lib/utils/constants";
+import type { Bet, Wager, User } from "@/lib/supabase/types";
 
 // Place or update a wager
 export async function POST(
@@ -31,15 +31,17 @@ export async function POST(
   const { optionId, amount } = parsed.data;
 
   // Fetch the bet and verify it's open
-  const { data: bet, error: betError } = await supabase
+  const { data: betData, error: betError } = await supabase
     .from("bets")
     .select("*")
     .eq("id", betId)
     .single();
 
-  if (betError || !bet) {
+  if (betError || !betData) {
     return NextResponse.json({ error: "Bet not found" }, { status: 404 });
   }
+
+  const bet = betData as unknown as Bet;
 
   if (bet.status !== "open") {
     return NextResponse.json(
@@ -71,23 +73,27 @@ export async function POST(
   }
 
   // Get user's coin balance
-  const { data: profile } = await supabase
+  const { data: profileData } = await supabase
     .from("users")
     .select("coin_balance")
     .eq("id", user.id)
     .single();
+
+  const profile = profileData as unknown as Pick<User, "coin_balance"> | null;
 
   if (!profile) {
     return NextResponse.json({ error: "Profile not found" }, { status: 404 });
   }
 
   // Check for existing wager (to handle updates)
-  const { data: existingWager } = await supabase
+  const { data: existingWagerData } = await supabase
     .from("wagers")
     .select("*")
     .eq("bet_id", betId)
     .eq("user_id", user.id)
     .single();
+
+  const existingWager = existingWagerData as unknown as Wager | null;
 
   // Calculate effective balance (refund old wager if updating)
   const effectiveBalance =
@@ -179,11 +185,13 @@ export async function DELETE(
   }
 
   // Verify bet is still open
-  const { data: bet } = await supabase
+  const { data: betData } = await supabase
     .from("bets")
     .select("status, deadline")
     .eq("id", betId)
     .single();
+
+  const bet = betData as unknown as Pick<Bet, "status" | "deadline"> | null;
 
   if (!bet || bet.status !== "open") {
     return NextResponse.json(
@@ -193,12 +201,14 @@ export async function DELETE(
   }
 
   // Find and delete the wager
-  const { data: wager } = await supabase
+  const { data: wagerData } = await supabase
     .from("wagers")
     .select("*")
     .eq("bet_id", betId)
     .eq("user_id", user.id)
     .single();
+
+  const wager = wagerData as unknown as Wager | null;
 
   if (!wager) {
     return NextResponse.json({ error: "No wager to withdraw" }, { status: 404 });
@@ -217,11 +227,13 @@ export async function DELETE(
   }
 
   // Refund coins
-  const { data: profile } = await supabase
+  const { data: profileData } = await supabase
     .from("users")
     .select("coin_balance")
     .eq("id", user.id)
     .single();
+
+  const profile = profileData as unknown as Pick<User, "coin_balance"> | null;
 
   if (profile) {
     await supabase

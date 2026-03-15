@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { calculatePayouts } from "@/lib/utils/payouts";
-import { CREATOR_ABANDON_PENALTY } from "@/lib/utils/constants";
+import type { Bet, Wager } from "@/lib/supabase/types";
 
 export async function POST(
   request: NextRequest,
@@ -28,15 +28,17 @@ export async function POST(
   }
 
   // Fetch the bet
-  const { data: bet, error: betError } = await supabase
+  const { data: betData, error: betError } = await supabase
     .from("bets")
     .select("*")
     .eq("id", betId)
     .single();
 
-  if (betError || !bet) {
+  if (betError || !betData) {
     return NextResponse.json({ error: "Bet not found" }, { status: 404 });
   }
+
+  const bet = betData as unknown as Bet;
 
   // Only the creator can resolve
   if (bet.creator_id !== user.id) {
@@ -70,13 +72,15 @@ export async function POST(
   }
 
   // Get all wagers
-  const { data: wagers } = await supabase
+  const { data: wagersData } = await supabase
     .from("wagers")
     .select("*")
     .eq("bet_id", betId)
     .order("created_at", { ascending: true });
 
-  if (!wagers || wagers.length === 0) {
+  const wagers = (wagersData || []) as unknown as Wager[];
+
+  if (wagers.length === 0) {
     // No wagers — just mark as resolved
     await supabase
       .from("bets")
@@ -103,11 +107,17 @@ export async function POST(
     });
 
     // Credit the user's balance
-    const { data: profile } = await supabase
+    const { data: profileData } = await supabase
       .from("users")
       .select("coin_balance, streak_current, streak_best")
       .eq("id", payout.user_id)
       .single();
+
+    const profile = profileData as unknown as {
+      coin_balance: number;
+      streak_current: number;
+      streak_best: number;
+    } | null;
 
     if (profile) {
       const updates: Record<string, number> = {

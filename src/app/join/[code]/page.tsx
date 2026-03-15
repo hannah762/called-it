@@ -21,11 +21,13 @@ export default async function JoinBetPage({
   // If logged in, try to join the bet automatically
   if (user) {
     // Look up the bet by join code
-    const { data: bet } = await supabase
+    const { data: betData } = await supabase
       .from("bets")
       .select("id")
       .eq("join_code", upperCode)
       .single();
+
+    const bet = betData as unknown as { id: string } | null;
 
     if (bet) {
       // Check if already a participant
