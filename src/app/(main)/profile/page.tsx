@@ -20,7 +20,7 @@ export default async function ProfilePage() {
   let profile: any = null;
   let activeBets: any[] = [];
   let pastBets: any[] = [];
-  let totalBets = 0;
+  let totalVoted = 0;
   let totalWins = 0;
 
   if (user) {
@@ -64,10 +64,10 @@ export default async function ProfilePage() {
 
       activeBets = (active || []) as any[];
 
-      // Past bets (resolved)
+      // Past bets (resolved) — fetch without the join that might fail
       const { data: past } = await supabase
         .from("bets")
-        .select("*, winning_option:options!bets_winning_option_id_fkey(label)")
+        .select("*")
         .in("id", betIds)
         .eq("status", "resolved")
         .order("resolved_at", { ascending: false })
@@ -76,22 +76,39 @@ export default async function ProfilePage() {
       pastBets = (past || []) as any[];
     }
 
-    // Count total bets with wagers
-    const { count: wagerCount } = await supabase
+    // Calculate accuracy: get all user's wagers on resolved bets
+    const { data: userWagers } = await supabase
       .from("wagers")
-      .select("*", { count: "exact", head: true })
+      .select("bet_id, option_id")
       .eq("user_id", user.id);
-    totalBets = wagerCount || 0;
 
-    // Count wins (payouts where type = win, approximated by having a payout > wager)
-    const { count: winCount } = await supabase
-      .from("payouts")
-      .select("*", { count: "exact", head: true })
-      .eq("user_id", user.id);
-    totalWins = winCount || 0;
+    const allWagers = (userWagers || []) as any[];
+
+    if (allWagers.length > 0) {
+      // Get all resolved bets the user wagered on
+      const wageredBetIds = allWagers.map((w: any) => w.bet_id);
+      const { data: resolvedBets } = await supabase
+        .from("bets")
+        .select("id, winning_option_id")
+        .in("id", wageredBetIds)
+        .eq("status", "resolved");
+
+      const resolved = (resolvedBets || []) as any[];
+
+      // Count wins vs total resolved bets voted on
+      for (const bet of resolved) {
+        const wager = allWagers.find((w: any) => w.bet_id === bet.id);
+        if (wager) {
+          totalVoted++;
+          if (wager.option_id === bet.winning_option_id) {
+            totalWins++;
+          }
+        }
+      }
+    }
   }
 
-  const accuracy = totalBets > 0 ? Math.round((totalWins / totalBets) * 100) : 0;
+  const accuracy = totalVoted > 0 ? Math.round((totalWins / totalVoted) * 100) : 0;
   const initial = profile?.display_name?.[0]?.toUpperCase() || "?";
 
   function timeUntil(deadline: string): string {
@@ -102,6 +119,31 @@ export default async function ProfilePage() {
     if (hours > 24) return `${Math.floor(hours / 24)}d left`;
     if (hours > 0) return `${hours}h ${minutes}m`;
     return `${minutes}m`;
+  }
+
+  // Build a lookup for past bets: did the user win or lose?
+  // We already have pastBets and can check against wagers
+  const pastBetResults: Record<string, "win" | "loss" | "no_vote"> = {};
+  if (user) {
+    const { data: userWagers } = await supabase
+      .from("wagers")
+      .select("bet_id, option_id")
+      .eq("user_id", user.id);
+
+    const wagerMap = new Map(
+      ((userWagers || []) as any[]).map((w: any) => [w.bet_id, w.option_id])
+    );
+
+    for (const bet of pastBets) {
+      const userOptionId = wagerMap.get(bet.id);
+      if (!userOptionId) {
+        pastBetResults[bet.id] = "no_vote";
+      } else if (userOptionId === bet.winning_option_id) {
+        pastBetResults[bet.id] = "win";
+      } else {
+        pastBetResults[bet.id] = "loss";
+      }
+    }
   }
 
   return (
@@ -138,22 +180,26 @@ export default async function ProfilePage() {
         <Card className="border-0 bg-mint-light/50">
           <CardContent className="flex flex-col items-center py-4">
             <Target className="mb-1 h-5 w-5 text-mint" />
-            <p className="text-2xl font-bold">{totalBets > 0 ? `${accuracy}%` : "—"}</p>
-            <p className="text-xs text-muted-foreground">Accuracy</p>
+            <p className="text-2xl font-bold">{totalVoted > 0 ? `${accuracy}%` : "—"}</p>
+            <p className="text-xs text-muted-foreground">
+              Accuracy{totalVoted > 0 ? ` (${totalWins}/${totalVoted})` : ""}
+            </p>
           </CardContent>
         </Card>
         <Card className="border-0 bg-coral-light/50">
           <CardContent className="flex flex-col items-center py-4">
             <Flame className="mb-1 h-5 w-5 text-coral" />
             <p className="text-2xl font-bold">{profile?.streak_current ?? 0}</p>
-            <p className="text-xs text-muted-foreground">Win Streak</p>
+            <p className="text-xs text-muted-foreground">
+              Win Streak{profile?.streak_best > 0 ? ` (best: ${profile.streak_best})` : ""}
+            </p>
           </CardContent>
         </Card>
         <Card className="border-0 bg-violet-light/50">
           <CardContent className="flex flex-col items-center py-4">
             <Trophy className="mb-1 h-5 w-5 text-violet" />
-            <p className="text-2xl font-bold">{totalBets}</p>
-            <p className="text-xs text-muted-foreground">Total Bets</p>
+            <p className="text-2xl font-bold">{totalWins}</p>
+            <p className="text-xs text-muted-foreground">Wins</p>
           </CardContent>
         </Card>
       </div>
@@ -220,24 +266,32 @@ export default async function ProfilePage() {
         {pastBets.length > 0 ? (
           <div className="space-y-2.5">
             {pastBets.map((bet: any, i: number) => {
-              const accent = cardAccents[(i + 2) % cardAccents.length];
+              const result = pastBetResults[bet.id];
+              const resultConfig = {
+                win: { label: "Called It!", color: "text-mint", bg: "bg-mint-light", emoji: "&#x2705;" },
+                loss: { label: "Bad Call", color: "text-coral", bg: "bg-coral-light", emoji: "&#x274C;" },
+                no_vote: { label: "Sat Out", color: "text-muted-foreground", bg: "bg-muted", emoji: "&#x1F937;" },
+              };
+              const config = resultConfig[result || "no_vote"];
+
               return (
                 <Link key={bet.id} href={`/bet/${bet.id}`}>
-                  <Card className={`border-l-4 ${accent.border} transition-all hover:shadow-md active:scale-[0.99]`}>
+                  <Card className="transition-all hover:shadow-md active:scale-[0.99]">
                     <CardContent className="flex items-center justify-between p-4">
                       <div className="min-w-0 flex-1">
                         <p className="truncate font-semibold">{bet.question}</p>
-                        <p className="mt-0.5 text-xs text-muted-foreground">
-                          Resolved {new Date(bet.resolved_at).toLocaleDateString(
-                            undefined,
-                            { month: "short", day: "numeric" }
-                          )}
-                          {bet.winning_option?.label && (
-                            <span className="ml-1 text-mint">
-                              — {bet.winning_option.label}
-                            </span>
-                          )}
-                        </p>
+                        <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+                          <span>
+                            Resolved {new Date(bet.resolved_at).toLocaleDateString(
+                              undefined,
+                              { month: "short", day: "numeric" }
+                            )}
+                          </span>
+                          <span
+                            className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${config.bg} ${config.color}`}
+                            dangerouslySetInnerHTML={{ __html: `${config.emoji} ${config.label}` }}
+                          />
+                        </div>
                       </div>
                       <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />
                     </CardContent>
