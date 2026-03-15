@@ -83,8 +83,8 @@ export default function CreateBetPage() {
       return;
     }
     const deadlineDate = new Date(deadline);
-    if (deadlineDate <= new Date(Date.now() + 5 * 60 * 1000)) {
-      setError("Deadline must be at least 5 minutes from now.");
+    if (deadlineDate <= new Date()) {
+      setError("Deadline must be in the future.");
       return;
     }
 
