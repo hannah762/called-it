@@ -303,7 +303,9 @@ export function BetDetail({
   const isExpired = bet.status === "expired";
 
   const myPayout = payouts.find((p) => p.user_id === currentUserId);
-  const didWin = isResolved && myPayout && myWager?.option_id === bet.winning_option_id;
+  const didWin = isResolved && myWager && myWager.option_id === bet.winning_option_id;
+  const didLose = isResolved && myWager && myWager.option_id !== bet.winning_option_id;
+  const didNotVote = isResolved && !myWager;
 
   return (
     <div className="space-y-5">
@@ -354,7 +356,7 @@ export function BetDetail({
         </CardContent>
       </Card>
 
-      {/* Winner banner */}
+      {/* Result banners */}
       {didWin && (
         <Card className="border-0 bg-gradient-to-r from-mint to-mint/80 shadow-lg shadow-mint/20 overflow-hidden">
           <CardContent className="flex items-center gap-4 p-5">
@@ -364,7 +366,39 @@ export function BetDetail({
             <div>
               <p className="text-lg font-bold text-white">YOU CALLED IT!</p>
               <p className="text-sm text-white/80">
-                You earned {myPayout.amount} coins
+                You earned {myPayout?.amount || 0} coins
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {didLose && (
+        <Card className="border-0 bg-gradient-to-r from-coral to-coral/80 shadow-lg shadow-coral/20 overflow-hidden">
+          <CardContent className="flex items-center gap-4 p-5">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/20 text-2xl">
+              &#x1F627;
+            </div>
+            <div>
+              <p className="text-lg font-bold text-white">BAD CALL!</p>
+              <p className="text-sm text-white/80">
+                Better luck next time
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {didNotVote && (
+        <Card className="border-0 bg-gradient-to-r from-gold to-gold/80 shadow-lg shadow-gold/20 overflow-hidden">
+          <CardContent className="flex items-center gap-4 p-5">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/20 text-2xl">
+              &#x1F937;
+            </div>
+            <div>
+              <p className="text-lg font-bold text-gold-foreground">YOU SAT THIS ONE OUT</p>
+              <p className="text-sm text-gold-foreground/70">
+                No pick, no glory!
               </p>
             </div>
           </CardContent>
