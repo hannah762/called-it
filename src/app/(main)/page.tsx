@@ -60,7 +60,7 @@ export default async function HomePage() {
     if (betIds.length > 0) {
       const { data: active } = await supabase
         .from("bets")
-        .select("*, options(*)")
+        .select("*")
         .in("id", betIds)
         .in("status", ["open", "locked"])
         .order("deadline", { ascending: true });
@@ -73,7 +73,7 @@ export default async function HomePage() {
 
       const { data: resolved } = await supabase
         .from("bets")
-        .select("*, options(*)")
+        .select("*")
         .in("id", betIds)
         .eq("status", "resolved")
         .gte("resolved_at", sevenDaysAgo)
@@ -203,7 +203,7 @@ export default async function HomePage() {
                           </span>
                           <span className="flex items-center gap-1">
                             <Users className="h-3 w-3" />
-                            {bet.options?.length || 0} options
+                            {bet.stakes || "For fun"}
                           </span>
                           <span
                             className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
