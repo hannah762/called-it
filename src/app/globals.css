@@ -1,26 +1,107 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@custom-variant dark (&:is(.dark *));
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  /* Called It! custom palette */
+  --color-violet: var(--violet);
+  --color-violet-light: var(--violet-light);
+  --color-violet-foreground: var(--violet-foreground);
+  --color-gold: var(--gold);
+  --color-gold-light: var(--gold-light);
+  --color-gold-foreground: var(--gold-foreground);
+  --color-mint: var(--mint);
+  --color-mint-light: var(--mint-light);
+  --color-mint-foreground: var(--mint-foreground);
+  --color-coral: var(--coral);
+  --color-coral-light: var(--coral-light);
+  --color-coral-foreground: var(--coral-foreground);
+  --color-sky: var(--sky);
+  --color-sky-light: var(--sky-light);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+:root {
+  --radius: 0.875rem;
+
+  /* Base — warm white */
+  --background: oklch(0.988 0.002 90);
+  --foreground: oklch(0.17 0.02 280);
+
+  /* Cards — pure white */
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.17 0.02 280);
+
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.17 0.02 280);
+
+  /* Primary — rich violet/purple */
+  --primary: oklch(0.55 0.22 285);
+  --primary-foreground: oklch(0.99 0.005 285);
+
+  /* Secondary — soft lavender tint */
+  --secondary: oklch(0.95 0.03 285);
+  --secondary-foreground: oklch(0.40 0.15 285);
+
+  /* Muted — warm light gray */
+  --muted: oklch(0.96 0.005 90);
+  --muted-foreground: oklch(0.50 0.01 280);
+
+  /* Accent — gold/amber */
+  --accent: oklch(0.82 0.14 80);
+  --accent-foreground: oklch(0.30 0.08 60);
+
+  --destructive: oklch(0.60 0.22 25);
+  --destructive-foreground: oklch(0.97 0.01 25);
+
+  --border: oklch(0.93 0.008 280);
+  --input: oklch(0.93 0.008 280);
+  --ring: oklch(0.55 0.22 285);
+
+  /* Fun palette — for colored cards */
+  --violet: oklch(0.55 0.22 285);
+  --violet-light: oklch(0.94 0.04 285);
+  --violet-foreground: oklch(0.99 0.005 285);
+  --gold: oklch(0.78 0.15 75);
+  --gold-light: oklch(0.95 0.06 85);
+  --gold-foreground: oklch(0.30 0.06 60);
+  --mint: oklch(0.72 0.14 165);
+  --mint-light: oklch(0.95 0.04 165);
+  --mint-foreground: oklch(0.25 0.06 165);
+  --coral: oklch(0.70 0.16 25);
+  --coral-light: oklch(0.95 0.04 25);
+  --coral-foreground: oklch(0.30 0.08 25);
+  --sky: oklch(0.70 0.12 240);
+  --sky-light: oklch(0.95 0.03 240);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
 }
